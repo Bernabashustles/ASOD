@@ -1,0 +1,316 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+  
+  /* Gradient variables for smooth transitions */
+  --gradient-1-color-1: 255, 105, 180;
+  --gradient-1-color-2: 65, 88, 208;
+  --gradient-2-color-1: 139, 92, 246;
+  --gradient-2-color-2: 59, 130, 246;
+  --gradient-3-color-1: 52, 211, 153;
+  --gradient-3-color-2: 99, 102, 241;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.gradient-bg {
+  position: relative;
+  overflow: hidden;
+  background-color: #ffffff;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.gradient-blob {
+  position: absolute;
+  filter: blur(80px);
+  border-radius: 50%;
+  opacity: 0.6;
+  mix-blend-mode: multiply;
+  will-change: transform, background;
+  transition: background 3s ease-in-out;
+}
+
+.gradient-blob-1 {
+  width: 900px;
+  height: 900px;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(236, 72, 153, 0.8) 0%,    /* Pink */
+    rgba(139, 92, 246, 0.8) 25%,   /* Purple */
+    rgba(59, 130, 246, 0.8) 50%,   /* Blue */
+    rgba(52, 211, 153, 0.8) 75%,   /* Green */
+    rgba(236, 72, 153, 0.8) 100%   /* Pink */
+  );
+  top: -450px;
+  left: -200px;
+  animation: 
+    blob-movement-1 30s infinite cubic-bezier(0.4, 0, 0.2, 1),
+    blob-rotate-1 25s infinite linear;
+}
+
+.gradient-blob-2 {
+  width: 700px;
+  height: 700px;
+  background: conic-gradient(
+    from 90deg at 50% 50%,
+    rgba(167, 139, 250, 0.8) 0%,   /* Light Purple */
+    rgba(79, 70, 229, 0.8) 25%,    /* Indigo */
+    rgba(147, 51, 234, 0.8) 50%,   /* Purple */
+    rgba(219, 39, 119, 0.8) 75%,   /* Pink */
+    rgba(167, 139, 250, 0.8) 100%  /* Light Purple */
+  );
+  bottom: -350px;
+  right: -150px;
+  animation: 
+    blob-movement-2 35s infinite cubic-bezier(0.4, 0, 0.2, 1),
+    blob-rotate-2 30s infinite linear;
+}
+
+.gradient-blob-3 {
+  width: 600px;
+  height: 600px;
+  background: conic-gradient(
+    from 180deg at 50% 50%,
+    rgba(52, 211, 153, 0.7) 0%,    /* Green */
+    rgba(56, 189, 248, 0.7) 25%,   /* Light Blue */
+    rgba(236, 72, 153, 0.7) 50%,   /* Pink */
+    rgba(139, 92, 246, 0.7) 75%,   /* Purple */
+    rgba(52, 211, 153, 0.7) 100%   /* Green */
+  );
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: 
+    blob-movement-3 40s infinite cubic-bezier(0.4, 0, 0.2, 1),
+    blob-rotate-3 35s infinite linear;
+}
+
+@keyframes blob-movement-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(300px, 300px) scale(1.4);
+  }
+  50% {
+    transform: translate(150px, -150px) scale(0.9);
+  }
+  75% {
+    transform: translate(-300px, 150px) scale(1.3);
+  }
+}
+
+@keyframes blob-movement-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-200px, -200px) scale(1.5);
+  }
+  66% {
+    transform: translate(150px, -120px) scale(0.8);
+  }
+}
+
+@keyframes blob-movement-3 {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  25% {
+    transform: translate(-40%, -60%) scale(1.3);
+  }
+  50% {
+    transform: translate(-60%, -40%) scale(0.9);
+  }
+  75% {
+    transform: translate(-40%, -40%) scale(1.4);
+  }
+}
+
+@keyframes blob-rotate-1 {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blob-rotate-2 {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes blob-rotate-3 {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.form-group {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  height: 52px;
+  font-size: 0.9375rem;
+  line-height: 1;
+  color: white;
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-group input:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.form-group input:focus {
+  border-color: rgba(255, 255, 255, 0.8);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.form-group .password-input {
+  padding-right: 3rem;
+}
+
+.checkbox-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.checkbox-wrapper [data-state="checked"] {
+  animation: checkboxCheck 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes checkboxCheck {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes tooltipEnter {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tooltipExit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(5px) scale(0.95);
+  }
+}
+
+.tooltip-content {
+  transform-origin: var(--radix-tooltip-content-transform-origin);
+  animation: tooltipEnter 0.15s ease-out;
+}
+
+.tooltip-content[data-state='closed'] {
+  animation: tooltipExit 0.1s ease-in;
+}
+
+[data-state='delayed-open'][data-side='top'] .tooltip-content {
+  animation-name: slideDownAndFade;
+}
+
+[data-state='delayed-open'][data-side='bottom'] .tooltip-content {
+  animation-name: slideUpAndFade;
+}
+
+.tooltip-arrow {
+  fill: rgba(255, 255, 255, 0.1);
+  will-change: transform;
+  transform-origin: var(--radix-tooltip-content-transform-origin);
+  animation: tooltipEnter 0.15s ease-out;
+}

@@ -1,0 +1,215 @@
+/* React Quill Custom Styles */
+.ql-container {
+  font-size: 16px !important;
+  border: 1px solid #e5e7eb !important;
+  border-top: none !important;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.ql-toolbar {
+  border: 1px solid #e5e7eb !important;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  background-color: #fff;
+}
+
+.ql-editor {
+  min-height: 200px;
+  font-family: inherit;
+  padding: 1rem !important;
+  background-color: #fff;
+}
+
+.ql-editor.ql-blank::before {
+  color: #9ca3af;
+  font-style: normal;
+}
+
+.ql-editor p {
+  margin-bottom: 0.5rem;
+}
+
+/* Fix toolbar button hover states */
+.ql-toolbar button {
+  height: 24px;
+  width: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.ql-toolbar button:hover {
+  background-color: #f3f4f6;
+}
+
+.ql-toolbar button.ql-active {
+  background-color: #f3f4f6;
+  color: #000;
+}
+
+.ql-toolbar button:hover .ql-stroke,
+.ql-toolbar button.ql-active .ql-stroke {
+  stroke: #000;
+}
+
+.ql-toolbar button:hover .ql-fill,
+.ql-toolbar button.ql-active .ql-fill {
+  fill: #000;
+}
+
+/* Toolbar separator */
+.ql-formats {
+  margin-right: 8px !important;
+}
+
+.ql-formats:after {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 24px;
+  background-color: #e5e7eb;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.ql-formats:last-child:after {
+  display: none;
+}
+
+/* AI Dialog Styles */
+.DialogContent {
+  padding: 0 !important;
+  gap: 0 !important;  
+}
+
+.DialogHeader {
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+.DialogFooter {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Textarea styles */
+textarea:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: #000;
+}
+
+textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Dialog Animation */
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.DialogContent {
+  animation: dialogSlideIn 0.15s ease-out;
+}
+
+/* Generate AI Button */
+.generate-ai-btn {
+  transition: all 0.2s;
+}
+
+.generate-ai-btn:hover {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  min-height: 200px;
+  padding: 1rem;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror > * + * {
+  margin-top: 0.75em;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding: 0 1rem;
+}
+
+.ProseMirror h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+}
+
+.ProseMirror blockquote {
+  border-left: 4px solid #e5e7eb;
+  margin: 1rem 0;
+  padding-left: 1rem;
+  font-style: italic;
+  color: #6b7280;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+}
+
+.ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+@keyframes axova-bounce {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-20px);
+    opacity: 1;
+  }
+}
+
+.animate-axova {
+  animation: axova-bounce 2s infinite;
+}
+
+.animate-delay-0 { animation-delay: 0s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-600 { animation-delay: 0.6s; }
+.animate-delay-800 { animation-delay: 0.8s; } 
