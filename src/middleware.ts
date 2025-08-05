@@ -1,20 +1,3 @@
-// import { NextRequest, NextResponse } from "next/server";
-// import { getSessionCookie } from "better-auth";
-
-// export async function middleware(request: NextRequest) {
-//   const sessionCookie = getSessionCookie(request);
-//   if (!sessionCookie) {
-//     return NextResponse.redirect(new URL("/login", request.url));
-//   }
-//   return NextResponse.next();
-// }
-
-// // const
-// export const config = {
-//   runtime: "experimental-edge",
-//   matcher: ["/dashboard"],
-// };
-
 import { getSessionCookie } from "better-auth/cookies";
 import { NextRequest, NextResponse } from "next/server";
 export async function middleware(request: NextRequest) {
@@ -26,7 +9,7 @@ export async function middleware(request: NextRequest) {
       pathname,
     )
   ) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/steps/choose", request.url));
   }
   if (!sessionCookie && pathname.startsWith("/")) {
     return NextResponse.redirect(new URL("/auth", request.url));
@@ -37,6 +20,11 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/",
+    "/auth",
+    "/auth/signup",
+    "/auth/reset-password", 
+    "/auth/verify",
+    "/auth/forgot-password",
     "/steps/:path*",
     "/store/:path*"
   ],

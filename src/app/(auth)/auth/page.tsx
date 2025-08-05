@@ -47,7 +47,7 @@ export default function AuthPage() {
 
       if (result.data) {
         toast.success("Successfully signed in!");
-        router.push("/dashboard");
+        router.push("/steps/choose");
       } else {
         throw new Error("Authentication failed");
       }
@@ -72,7 +72,7 @@ export default function AuthPage() {
     try {
       await signIn.social({
         provider,
-        callbackURL: "/dashboard",
+        callbackURL: "/steps/choose",
       });
     } catch (error) {
       toast.error(`${provider} sign in failed`);
