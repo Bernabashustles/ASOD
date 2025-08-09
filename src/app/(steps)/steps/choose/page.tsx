@@ -240,7 +240,29 @@ export default function ChooseStorePage() {
               {!loading && visibleStores.map((store) => (
                 <button
                   key={store.id}
-                  onClick={() => router.push(`/store/${store.id}`)}
+                  onClick={async () => {
+                    const subdomain = store.url?.split('.myaxova.store')[0] || store.name.toLowerCase().replace(/\s+/g,'-');
+                    try {
+                      const { store: full } = await storeService.getStoreBySubdomain(subdomain);
+                      try {
+                        localStorage.setItem('selectedStore', JSON.stringify({
+                          id: full.id,
+                          name: full.storeName,
+                          subdomain: full.subdomain,
+                          url: full.storeUrl,
+                          timezone: (full as any).timezone,
+                          currency: (full as any).currency,
+                          isActive: full.isActive,
+                          isPublished: full.isPublished,
+                          savedAt: new Date().toISOString(),
+                        }));
+                      } catch {}
+                    } catch (e) {
+                      toast.error('Failed to fetch store details');
+                    } finally {
+                      router.push(`/store/${encodeURIComponent(subdomain)}`);
+                    }
+                  }}
                   className="w-full group hover:bg-white/8 rounded-lg p-4 flex items-center justify-between transition-all duration-200 border border-white/10 hover:border-white/20 focus-visible:outline-none focus-visible:ring-0 transform-gpu will-change-transform"
                 >
                   <div className="flex items-center flex-1">
@@ -391,8 +413,30 @@ export default function ChooseStorePage() {
                   <CommandItem
                     key={store.id}
                     onSelect={() => {
-                      router.push(`/store/${store.id}`);
-                      setSearchOpen(false);
+                      (async () => {
+                        const subdomain = store.url?.split('.myaxova.store')[0] || store.name.toLowerCase().replace(/\s+/g,'-');
+                        try {
+                          const { store: full } = await storeService.getStoreBySubdomain(subdomain);
+                          try {
+                            localStorage.setItem('selectedStore', JSON.stringify({
+                              id: full.id,
+                              name: full.storeName,
+                              subdomain: full.subdomain,
+                              url: full.storeUrl,
+                              timezone: (full as any).timezone,
+                              currency: (full as any).currency,
+                              isActive: full.isActive,
+                              isPublished: full.isPublished,
+                              savedAt: new Date().toISOString(),
+                            }));
+                          } catch {}
+                        } catch (e) {
+                          toast.error('Failed to fetch store details');
+                        } finally {
+                          router.push(`/store/${encodeURIComponent(subdomain)}`);
+                          setSearchOpen(false);
+                        }
+                      })();
                     }}
                     className="group text-white rounded-lg p-3 cursor-pointer border border-transparent data-[selected=true]:bg-white/10 hover:bg-white/10 data-[selected=true]:text-white"
                   >

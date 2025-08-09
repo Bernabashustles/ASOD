@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { LucideIcon } from 'lucide-react';
 import { 
   Store,
@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSession } from "@/lib/auth-client";
 
 type NavItem = {
   icon: LucideIcon;
@@ -202,25 +204,77 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const params = useParams();
+  const { data: session } = useSession();
+  const storeId = (params?.storeid as string) || "my-store";
+  const basePath = `/store/${storeId}`;
+  const storeName = storeId.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const storeDomain = `${storeId}.asod.store`;
+
+  const storeInitials = storeName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(s => s[0]?.toUpperCase())
+    .join('');
+
+  const avatarColorClasses = (() => {
+    const palette = [
+      "bg-emerald-100 text-emerald-700",
+      "bg-sky-100 text-sky-700",
+      "bg-violet-100 text-violet-700",
+      "bg-amber-100 text-amber-700",
+      "bg-rose-100 text-rose-700",
+      "bg-teal-100 text-teal-700",
+    ];
+    const key = storeId.toLowerCase();
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash << 5) - hash + key.charCodeAt(i);
+      hash |= 0;
+    }
+    return palette[Math.abs(hash) % palette.length];
+  })();
+
+  const userColorClasses = (() => {
+    const palette = [
+      "bg-emerald-100 text-emerald-700",
+      "bg-sky-100 text-sky-700",
+      "bg-violet-100 text-violet-700",
+      "bg-amber-100 text-amber-700",
+      "bg-rose-100 text-rose-700",
+      "bg-teal-100 text-teal-700",
+    ];
+    const key = (session?.user?.email || session?.user?.name || 'user').toLowerCase();
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash << 5) - hash + key.charCodeAt(i);
+      hash |= 0;
+    }
+    return palette[Math.abs(hash) % palette.length];
+  })();
+
+  const resolveHref = (href: string) => `${basePath}${href}`;
   const [isOpen, setIsOpen] = useState(false);
 
   // Function to get current page title
   const getCurrentPageTitle = () => {
     const currentRoute = settingsNavigation
       .flatMap(section => section.items)
+      .map(item => ({ ...item, href: resolveHref(item.href) }))
       .find(item => item.href === pathname);
     return currentRoute?.label || 'Settings';
   };
 
   // Check if we're on the main settings page
-  const isMainSettingsPage = pathname === '/settings';
+  const isMainSettingsPage = pathname === `${basePath}/settings`;
 
   const MobileHeader = () => (
     <header className="h-14 bg-white border-b fixed top-0 left-0 right-0 z-30 lg:hidden">
       <div className="h-full px-4">
         <div className="flex items-center gap-3 h-full">
           <div className="flex items-center gap-3">
-            <Link href="/">
+            <Link href={basePath}>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -244,12 +298,18 @@ export default function SettingsLayout({
       {/* Store Info Card */}
       <div className="bg-white rounded-lg border border-[#e1e3e5] p-4">
         <div className="flex items-center gap-3">
-          <div className="w-[42px] h-[42px] bg-[#36b37e] rounded-lg flex items-center justify-center text-white text-base font-medium shrink-0">
-            MS
-          </div>
-          <div className="min-w-0">
-            <div className="text-[15px] font-medium text-[#202223] truncate">My Store</div>
-            <div className="text-[13px] text-[#6d7175] truncate">mt5p0j-iv.myAxova.com</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[15px] font-semibold text-[#202223] truncate mb-2">{storeName}</div>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 rounded-full">
+                <AvatarFallback className={cn("text-sm font-semibold rounded-full", avatarColorClasses)}>
+                  {storeInitials || 'ST'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <div className="text-[13px] text-[#6d7175] truncate">{storeDomain}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -267,7 +327,7 @@ export default function SettingsLayout({
               {section.items.map((item, itemIndex) => (
                 <Link
                   key={itemIndex}
-                  href={item.href}
+                  href={resolveHref(item.href)}
                   className="flex items-center px-4 py-3.5 gap-3 hover:bg-[#f6f6f7] active:bg-[#f1f2f3] transition-colors"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -292,12 +352,15 @@ export default function SettingsLayout({
       {/* Account Info Card */}
       <div className="bg-white rounded-lg border border-[#e1e3e5] p-4">
         <div className="flex items-center gap-3">
-          <div className="w-[42px] h-[42px] bg-[#1a73e8] rounded-lg flex items-center justify-center text-white text-base font-medium shrink-0">
-            SL
-          </div>
+          <Avatar className="h-10 w-10 rounded-full">
+            <AvatarImage src={session?.user?.image || undefined} alt={session?.user?.name || 'User'} />
+            <AvatarFallback className={cn("text-sm font-semibold rounded-full", userColorClasses)}>
+              {(session?.user?.name || session?.user?.email || 'U').slice(0,2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0">
-            <div className="text-[15px] font-medium text-[#202223] truncate">Solvix Labs</div>
-            <div className="text-[13px] text-[#6d7175] truncate">solvixlabs@gmail.com</div>
+            <div className="text-[15px] font-medium text-[#202223] truncate">{session?.user?.name || session?.user?.email || 'User'}</div>
+            <div className="text-[13px] text-[#6d7175] truncate">{session?.user?.email || ''}</div>
           </div>
         </div>
       </div>
@@ -308,15 +371,17 @@ export default function SettingsLayout({
     <>
       {/* Store Selector */}
       <div className="bg-white p-4 border-b border-[#e1e3e5]">
-        <button className="w-full flex items-center gap-3 group">
-          <div className="w-[34px] h-[34px] bg-[#36b37e] rounded-lg flex items-center justify-center text-white text-sm font-medium shrink-0">
-            MS
-          </div>
+        <div className="w-full flex items-center gap-3 group">
+          <Avatar className="h-9 w-9 rounded-full">
+            <AvatarFallback className={cn("text-[11px] font-semibold rounded-full", avatarColorClasses)}>
+              {storeInitials || 'ST'}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0 text-left">
-            <div className="text-[14px] font-medium text-[#202223] truncate">My Store</div>
-            <div className="text-[13px] text-[#6d7175] truncate">mt5p0j-iv.myAxova.com</div>
+            <div className="text-[14px] font-semibold text-[#202223] truncate mb-0.5">{storeName}</div>
+            <div className="text-[13px] text-[#6d7175] truncate">{storeDomain}</div>
           </div>
-        </button>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -330,11 +395,12 @@ export default function SettingsLayout({
             </div>
             <nav>
               {section.items.map((item, itemIndex) => {
-                const isActive = pathname === item.href;
+                const resolved = resolveHref(item.href);
+                const isActive = pathname === resolved;
                 return (
                   <Link
                     key={itemIndex}
-                    href={item.href}
+                    href={resolved}
                     className={cn(
                       "flex items-center px-4 py-2 text-[13px] gap-3",
                       "transition-all duration-150",
@@ -356,15 +422,18 @@ export default function SettingsLayout({
 
       {/* Account Info */}
       <div className="border-t border-[#e1e3e5] p-4">
-        <button className="w-full flex items-center gap-3 group">
-          <div className="w-[34px] h-[34px] bg-[#1a73e8] rounded-lg flex items-center justify-center text-white text-sm font-medium shrink-0">
-            SL
-          </div>
+        <div className="w-full flex items-center gap-3 group">
+          <Avatar className="h-9 w-9 rounded-full">
+            <AvatarImage src={session?.user?.image || undefined} alt={session?.user?.name || 'User'} />
+            <AvatarFallback className={cn("text-[11px] font-semibold rounded-full", userColorClasses)}>
+              {(session?.user?.name || session?.user?.email || 'U').slice(0,2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0 text-left">
-            <div className="text-[14px] font-medium text-[#202223] truncate">Solvix Labs</div>
-            <div className="text-[13px] text-[#6d7175] truncate">solvixlabs@gmail.com</div>
+            <div className="text-[14px] font-medium text-[#202223] truncate">{session?.user?.name || session?.user?.email || 'User'}</div>
+            <div className="text-[13px] text-[#6d7175] truncate">{session?.user?.email || ''}</div>
           </div>
-        </button>
+        </div>
       </div>
     </>
   );
@@ -377,7 +446,7 @@ export default function SettingsLayout({
           <div className="flex items-center gap-4">
             {/* Back Button Group */}
             <div className="flex items-center">
-              <Link href="/settings" className="group">
+              <Link href={`${basePath}/settings`} className="group">
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -396,7 +465,7 @@ export default function SettingsLayout({
                 {!isMainSettingsPage ? (
                   <>
                     <Link 
-                      href="/settings" 
+                      href={`${basePath}/settings`} 
                       className="text-[#6d7175] hover:text-[#202223] transition-colors"
                     >
                       Settings

@@ -1,4 +1,5 @@
 import ClientLayout from '@/components/ClientLayout';
+import StoreResolver from './StoreResolver';
 
 export default function MainGroupLayout({
   children,
@@ -6,7 +7,11 @@ export default function MainGroupLayout({
   children: React.ReactNode;
 }) {
   return (
-      <ClientLayout>{children}</ClientLayout>
+      <ClientLayout>
+        {/* Resolve store by subdomain and expose context */}
+        <StoreResolver />
+        {children}
+      </ClientLayout>
 
   );
 }

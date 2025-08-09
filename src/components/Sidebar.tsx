@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import {
   Home,
   ShoppingBag,
@@ -41,11 +41,16 @@ import {
   Building2,
   Truck,
   User,
-  Shield
+  Shield,
+  LogOut
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from './ui/dropdown-menu';
+import { Skeleton } from './ui/skeleton';
+import { useSession } from "@/lib/auth-client";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { signOut } from "@/lib/auth-client";
 
 interface Team {
   id: number;
@@ -252,13 +257,15 @@ interface NavItemProps {
   isChild?: boolean;
   onClick?: () => void;
   isOpen: boolean;
+  basePath: string;
 }
 
-const NavItem = ({ item, isCollapsed, isChild = false, onClick, isOpen }: NavItemProps) => {
+const NavItem = ({ item, isCollapsed, isChild = false, onClick, isOpen, basePath }: NavItemProps) => {
   const pathname = usePathname();
   const hasChildren = item.children && item.children.length > 0;
-  const isActive = item.href === pathname || 
-    (item.children?.some(child => child.href === pathname));
+  const resolvedHref = item.href ? `${basePath}${item.href}` : undefined;
+  const isActive = (!!resolvedHref && (pathname === resolvedHref || pathname.startsWith(resolvedHref + '/'))) ||
+    (item.children?.some(child => !!child.href && (pathname === `${basePath}${child.href}` || pathname.startsWith(`${basePath}${child.href}` + '/'))));
 
   const content = (
     <div
@@ -304,7 +311,7 @@ const NavItem = ({ item, isCollapsed, isChild = false, onClick, isOpen }: NavIte
   return (
     <div>
       {item.href ? (
-        <Link href={item.href} onClick={onClick}>
+        <Link href={resolvedHref!} onClick={onClick} title={resolvedHref}>
           {content}
         </Link>
       ) : (
@@ -317,11 +324,11 @@ const NavItem = ({ item, isCollapsed, isChild = false, onClick, isOpen }: NavIte
             {item.children.map((child, index) => (
               <div key={index} className="relative">
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-px bg-gray-200" />
-                <Link href={child.href || '#'} onClick={() => onClick?.()}>
+                <Link href={`${basePath}${child.href || ''}`} onClick={() => onClick?.()} title={`${basePath}${child.href || ''}`}>
                   <button className={cn(
                     "flex items-center gap-2 w-full rounded-md py-1.5 pl-8 pr-2 text-sm",
                     "text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 transition-colors min-w-0",
-                    pathname === child.href && "bg-gray-100/80 text-gray-900"
+                    (child.href && (pathname === `${basePath}${child.href}` || pathname.startsWith(`${basePath}${child.href}` + '/'))) && "bg-gray-100/80 text-gray-900"
                   )}>
                     {child.icon}
                     <span className="truncate">{child.label}</span>
@@ -336,131 +343,133 @@ const NavItem = ({ item, isCollapsed, isChild = false, onClick, isOpen }: NavIte
   );
 };
 
-const StoreSwitcher = ({ isCollapsed }: { isCollapsed: boolean }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentStore, setCurrentStore] = useState(teams[0].stores[0]);
+const SidebarFooter = ({ isCollapsed }: { isCollapsed: boolean }) => {
+  const { data: session, isPending } = useSession();
+  const name = session?.user?.name || session?.user?.email?.split('@')[0] || 'User';
+  const email = session?.user?.email || '';
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s: string) => s[0]?.toUpperCase())
+    .join('');
 
-  // Generate initials from store name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase();
-  };
-
-  // Generate random pastel color based on store name
-  const getStoreColor = (name: string) => {
-    const colors = [
-      'bg-[#36B37E]', 'bg-[#2563EB]', 'bg-[#9333EA]',
-      'bg-[#F59E0B]', 'bg-[#EC4899]', 'bg-[#10B981]'
+  const colorClasses = (() => {
+    const key = email || name;
+    const palette = [
+      "bg-emerald-100 text-emerald-700",
+      "bg-sky-100 text-sky-700",
+      "bg-violet-100 text-violet-700",
+      "bg-amber-100 text-amber-700",
+      "bg-rose-100 text-rose-700",
+      "bg-teal-100 text-teal-700",
     ];
-    const index = name.length % colors.length;
-    return colors[index];
-  };
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash << 5) - hash + key.charCodeAt(i);
+      hash |= 0;
+    }
+    return palette[Math.abs(hash) % palette.length];
+  })();
 
   return (
     <div className="p-3 mt-auto border-t bg-white/50 backdrop-blur-sm">
-      {isCollapsed ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-10 h-10 rounded-xl"
-        >
-          <div className={cn(
-            "w-full h-full rounded-lg flex items-center justify-center",
-            getStoreColor(currentStore.name)
-          )}>
-            <span className="text-white font-medium text-sm">
-              {getInitials(currentStore.name)}
-            </span>
+      {isPending ? (
+        isCollapsed ? (
+          <div className="flex items-center justify-center">
+            <Skeleton className="h-9 w-9 rounded-full" />
           </div>
-        </Button>
-      ) : (
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="min-w-0 flex-1">
+              <Skeleton className="h-4 w-28 mb-1" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+          </div>
+        )
+      ) : isCollapsed ? (
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              className="w-full h-[52px] px-2 justify-between hover:bg-gray-100 rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center shadow-sm",
-                  getStoreColor(currentStore.name)
-                )}>
-                  <span className="text-white font-medium">
-                    {getInitials(currentStore.name)}
-                  </span>
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium truncate">
-                    {currentStore.name}
-                  </span>
-                  <span className="text-xs text-gray-500 truncate">
-                    {currentStore.domain}
-                  </span>
+            <button className="mx-auto flex items-center justify-center">
+              <Avatar className="h-9 w-9 ring-2 ring-white shadow-sm">
+                <AvatarImage src={session?.user?.image || undefined} alt={name} />
+                <AvatarFallback className={cn("text-[11px] font-semibold", colorClasses)}>
+                  {initials || 'U'}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 mb-2 ml-2">
+            <DropdownMenuItem className="cursor-default">
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8 ring-2 ring-white shadow-sm">
+                  <AvatarImage src={session?.user?.image || undefined} alt={name} />
+                  <AvatarFallback className={cn("text-[11px] font-semibold", colorClasses)}>
+                    {initials || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
+                  {email && <p className="text-xs text-gray-500 truncate">{email}</p>}
                 </div>
               </div>
-              <ChevronDown className="h-4 w-4 text-gray-500 shrink-0" />
-            </Button>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/profile-settings">
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/general">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => signOut()}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-full flex items-center gap-3 hover:bg-gray-100/80 rounded-xl p-2 transition-colors">
+              <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm">
+                <AvatarImage src={session?.user?.image || undefined} alt={name} />
+                <AvatarFallback className={cn("text-sm font-semibold", colorClasses)}>
+                  {initials || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 text-left">
+                <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
+                {email && <p className="text-xs text-gray-500 truncate">{email}</p>}
+              </div>
+              <ChevronDown className="ml-auto w-4 h-4 text-gray-500" />
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            className="w-[240px] p-2" 
-            align="start" 
-            alignOffset={11}
-            sideOffset={8}
-          >
-            <div className="space-y-4">
-              {teams.map((team) => (
-                <div key={team.id}>
-                  <div className="px-2 mb-2">
-                    <h4 className="text-xs font-medium text-gray-500">{team.name}</h4>
-                  </div>
-                  <div className="space-y-1">
-                    {team.stores.map((store) => (
-                      <DropdownMenuItem 
-                        key={store.id}
-                        className="p-2 focus:bg-gray-100 rounded-lg cursor-pointer"
-                        onClick={() => {
-                          setCurrentStore(store);
-                          setIsOpen(false);
-                        }}
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center",
-                            getStoreColor(store.name)
-                          )}>
-                            <span className="text-white text-sm font-medium">
-                              {getInitials(store.name)}
-                            </span>
-                          </div>
-                          <div className="flex flex-col flex-1 min-w-0">
-                            <span className="text-sm font-medium truncate">
-                              {store.name}
-                            </span>
-                            <span className="text-xs text-gray-500 truncate">
-                              {store.domain}
-                            </span>
-                          </div>
-                          {store.id === currentStore.id && (
-                            <Check className="w-4 h-4 text-blue-600" />
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <DropdownMenuSeparator className="my-2" />
-            <Button 
-              variant="ghost" 
-              className="w-full h-9 justify-start text-sm font-normal"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add new store
-            </Button>
+          <DropdownMenuContent align="start" className="w-56 mb-2 ml-2">
+            <DropdownMenuItem asChild>
+              <Link href="/profile-settings">
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/general">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => signOut()}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Log out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )}
@@ -485,6 +494,9 @@ const Sidebar = ({
 }: SidebarProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const params = useParams();
+  const storeId = (params?.storeid as string) || '';
+  const basePath = storeId ? `/store/${storeId}` : '';
 
   const handleMenuClick = (label: string) => {
     setOpenMenu(prev => (prev === label ? null : label));
@@ -607,6 +619,7 @@ const Sidebar = ({
                     item={item} 
                     isCollapsed={isMobile ? false : isCollapsed}
                     isOpen={openMenu === item.label}
+                    basePath={basePath}
                     onClick={() => {
                       handleMenuClick(item.label);
                       if (isMobile && !item.children) {
@@ -621,8 +634,8 @@ const Sidebar = ({
           ))}
         </div>
 
-        {/* Store Switcher */}
-        <StoreSwitcher isCollapsed={isCollapsed} />
+        {/* Footer: Current user session */}
+        <SidebarFooter isCollapsed={isCollapsed} />
       </div>
     </>
   );

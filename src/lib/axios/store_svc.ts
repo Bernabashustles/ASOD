@@ -61,6 +61,24 @@ export interface MyStoresApiResponse {
     };
 }
 
+// Response type for GET /stores/by-subdomain/{subdomain}
+export interface StoreBySubdomainApiResponse {
+    success: boolean;
+    data: {
+        store: {
+            id: string;
+            storeName: string;
+            subdomain: string;
+            timezone: string;
+            currency: string;
+            isActive: boolean;
+            isPublished: boolean;
+        };
+        storeUrl: string;
+        isActive: boolean;
+    };
+}
+
 export interface ApiError {
     message: string;
     errors?: Record<string, string[]>;
@@ -566,6 +584,36 @@ export const storeService = {
             return response.data;
         } catch (error) {
             console.error('Failed to get store:', error);
+            throw error;
+        }
+    },
+
+    // Get store by subdomain
+    async getStoreBySubdomain(subdomain: string): Promise<{
+        store: StoreSummary & { timezone?: string; currency?: string };
+        storeUrl: string;
+        isActive: boolean;
+    }> {
+        try {
+            const response = await axiosInstance.get<StoreBySubdomainApiResponse>(`/stores/by-subdomain/${encodeURIComponent(subdomain)}`);
+            if (response.data?.success && response.data.data?.store) {
+                const { store, storeUrl, isActive } = response.data.data;
+                const normalized: StoreSummary & { timezone?: string; currency?: string } = {
+                    id: store.id,
+                    storeName: store.storeName,
+                    subdomain: store.subdomain,
+                    createdAt: new Date().toISOString(),
+                    storeUrl,
+                    isActive: store.isActive,
+                    isPublished: store.isPublished,
+                    timezone: store.timezone,
+                    currency: store.currency,
+                };
+                return { store: normalized, storeUrl, isActive };
+            }
+            throw new Error('Unexpected response format for /stores/by-subdomain');
+        } catch (error) {
+            console.error('Failed to get store by subdomain:', error);
             throw error;
         }
     },

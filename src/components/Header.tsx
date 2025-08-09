@@ -7,18 +7,19 @@ import {
   HelpCircle, 
   Settings, 
   ChevronDown, 
-  LogOut, 
   CreditCard, 
-  User, 
   Menu,
   Store,
   ExternalLink,
-  Mail,
   MessageSquare,
-  Gift,
   AlertCircle,
   Package,
-  Clock
+  Clock,
+  Globe,
+  ArrowLeftRight,
+  ChevronRight,
+  Copy,
+  Check
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface HeaderProps {
   isSidebarCollapsed: boolean;
@@ -208,71 +211,139 @@ const NotificationsMenu = () => {
   );
 };
 
-const UserMenu = () => {
+const StoreMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const params = useParams();
+  const storeId = (params?.storeid as string) || "my-store";
+  const storeName = storeId.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const storeDomain = `${storeId}.asod.store`;
+  const initials = storeName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join("");
+
+  const avatarColorClasses = (() => {
+    const palette = [
+      "bg-emerald-100 text-emerald-700",
+      "bg-sky-100 text-sky-700",
+      "bg-violet-100 text-violet-700",
+      "bg-amber-100 text-amber-700",
+      "bg-rose-100 text-rose-700",
+      "bg-teal-100 text-teal-700",
+    ];
+    const key = (storeId || storeName || "store").toLowerCase();
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash << 5) - hash + key.charCodeAt(i);
+      hash |= 0;
+    }
+    const index = Math.abs(hash) % palette.length;
+    return palette[index];
+  })();
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://${storeDomain}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {}
+  };
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 hover:bg-gray-100 p-1.5 rounded-md transition-colors">
-          <div className="relative">
-            <img
-              src="https://avatars.githubusercontent.com/u/124599?v=4"
-              alt="User"
-              className="w-8 h-8 rounded-full ring-2 ring-white"
-            />
-            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white" />
+        <button className="group flex items-center gap-3 hover:bg-gray-100/70 px-2.5 py-1.5 rounded-xl transition-all">
+          <div className="relative p-[1.5px] rounded-full bg-gradient-to-br from-gray-200 via-gray-100 to-white shadow-sm">
+            <Avatar className="h-8 w-8 ring-2 ring-white">
+              <AvatarFallback className={cn("text-[11px] font-semibold", avatarColorClasses)}>
+                {initials || 'ST'}
+              </AvatarFallback>
+            </Avatar>
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
           </div>
-          <div className="hidden sm:flex flex-col items-start">
-            <span className="text-sm font-medium">Yeabkibir</span>
-            <span className="text-xs text-gray-500">m@example.com</span>
+          <div className="hidden sm:flex flex-col items-start leading-tight">
+            <span className="text-sm font-semibold text-gray-900">
+              {storeName}
+            </span>
+            <span className="text-[11px] text-gray-500 flex items-center gap-1">
+              <Globe className="w-3 h-3" />
+              {storeDomain}
+            </span>
           </div>
-          <ChevronDown className="w-4 h-4 text-gray-500 ml-2 hidden sm:block" />
+          <ChevronDown className="w-4 h-4 text-gray-500 ml-1 hidden sm:block" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">Yeabkibir</p>
-            <p className="text-xs text-gray-500">m@example.com</p>
+          <div className="flex items-start gap-3">
+            <div className="p-[2px] rounded-xl bg-gradient-to-br from-gray-200 via-gray-100 to-white shadow-sm">
+            <Avatar className="h-10 w-10 ring-2 ring-white">
+              <AvatarFallback className={cn("text-sm font-semibold", avatarColorClasses)}>
+                {initials || 'ST'}
+              </AvatarFallback>
+            </Avatar>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">{storeName}</p>
+              <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                <Globe className="w-3 h-3" /> https://{storeDomain}
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">Active</Badge>
+              </div>
+            </div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <User className="w-4 h-4 mr-2" />
-            Profile
+          <DropdownMenuItem asChild>
+            <Link href={`/steps/choose`} className="flex items-center">
+              <ArrowLeftRight className="w-4 h-4 mr-2" />
+              View or Switch Store
+              <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Store className="w-4 h-4 mr-2" />
-            My Store
+          <DropdownMenuItem asChild>
+            <a href={`https://${storeDomain}`} target="_blank" rel="noreferrer" className="flex items-center">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View Online Store
+              <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+            </a>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
+          <DropdownMenuItem asChild>
+            <Link href={`/store/${storeId}`} className="flex items-center">
+              <Store className="w-4 h-4 mr-2" />
+              Manage Store
+              <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/store/${storeId}/settings`} className="flex items-center">
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+              <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <Gift className="w-4 h-4 mr-2" />
-            What's New
-            <Badge className="ml-auto" variant="secondary">New</Badge>
+          <DropdownMenuItem onClick={handleCopy} className="flex items-center">
+            {copied ? ( 
+              <Check className="w-4 h-4 mr-2 text-emerald-600" />
+            ) : (
+              <Copy className="w-4 h-4 mr-2" />
+            )}
+            Copy Store Link
+            {copied && <span className="ml-auto text-xs text-emerald-600">Copied</span>}
           </DropdownMenuItem>
           <DropdownMenuItem>
             <MessageSquare className="w-4 h-4 mr-2" />
             Feedback
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Mail className="w-4 h-4 mr-2" />
-            Support
-          </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600">
-          <LogOut className="w-4 h-4 mr-2" />
-          Log out
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -281,9 +352,10 @@ const UserMenu = () => {
 export default function Header({ isSidebarCollapsed, isMobile, onMenuClick }: HeaderProps) {
   return (
     <header className={cn(
-      "h-14 border-b bg-white flex items-center justify-between sticky top-0 z-50 transition-all duration-300",
-      isMobile ? "pl-4" : (isSidebarCollapsed ? "pl-[76px]" : "pl-[266px]")
+      "h-14 border-b bg-white grid grid-cols-[auto,1fr,auto] items-center sticky top-0 z-50 transition-all duration-300",
+      isMobile ? "px-4" : (isSidebarCollapsed ? "pl-[76px] pr-4" : "pl-[266px] pr-4")
     )}>
+      {/* Left: Menu button */}
       <div className="flex items-center gap-2">
         {isMobile && (
           <Button
@@ -297,23 +369,24 @@ export default function Header({ isSidebarCollapsed, isMobile, onMenuClick }: He
         )}
       </div>
 
-      <div className="flex items-center gap-2 px-4 flex-1 max-w-[800px]">
-        {/* Enhanced Search Input */}
-        <div className="relative flex-1 max-w-2xl mx-auto">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-gray-500 transition-colors" />
-            <Input 
-              placeholder="Search products, orders, or customers..." 
-              className="pl-11 pr-4 h-10 w-full bg-gray-50/50 border-gray-200 rounded-xl
-                hover:bg-white focus:bg-white transition-colors duration-200
-                hover:border-gray-300 focus:border-gray-300 focus:ring-0"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 px-1.5 h-6 text-[10px] font-mono font-medium text-gray-400 bg-gray-100/80 rounded border border-gray-200/50">
-              /
-            </div>
+      {/* Center: Search (perfectly centered) */}
+      <div className="justify-self-center w-full max-w-2xl px-4">
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-gray-500 transition-colors" />
+          <Input
+            placeholder="Search products, orders, or customers..."
+            className="pl-11 pr-14 h-10 w-full bg-gray-50/60 border-gray-200 rounded-2xl shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)]
+              hover:bg-white focus:bg-white transition-colors duration-200
+              hover:border-gray-300 focus:border-gray-300 focus:ring-0"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 px-2 h-6 text-[10px] font-mono font-medium text-gray-500 bg-gray-100 rounded-md border border-gray-200">
+            /
           </div>
         </div>
+      </div>
 
+      {/* Right: Actions */}
+      <div className="flex items-center justify-end gap-2 pr-2">
         <Button
           variant="ghost"
           size="icon"
@@ -321,12 +394,10 @@ export default function Header({ isSidebarCollapsed, isMobile, onMenuClick }: He
         >
           <HelpCircle className="h-4 w-4" />
         </Button>
-        
         <NotificationsMenu />
-
         <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block" />
-        <UserMenu />
+        <StoreMenu />
       </div>
     </header>
   );
-}
+} 
