@@ -37,6 +37,7 @@ const CheckFilled = ({ className }: { className?: string }) => {
 
 type LoadingState = {
   text: string;
+  Icon?: React.ComponentType<{ className?: string }>;
 };
 
 const LoaderCore = ({
@@ -47,37 +48,41 @@ const LoaderCore = ({
   value?: number;
 }) => {
   return (
-    <div className="flex relative justify-start max-w-xl mx-auto flex-col mt-40">
+    <div className="flex relative justify-start max-w-lg mx-auto flex-col mt-32">
       {loadingStates.map((loadingState, index) => {
         const distance = Math.abs(index - value);
-        const opacity = Math.max(1 - distance * 0.2, 0); // Minimum opacity is 0, keep it 0.2 if you're sane.
+        const opacity = Math.max(1 - distance * 0.25, 0);
 
         return (
           <motion.div
             key={index}
-            className={cn("text-left flex gap-2 mb-4")}
+            className={cn("text-center flex gap-3 mb-3 items-center justify-center")}
             initial={{ opacity: 0, y: -(value * 40) }}
             animate={{ opacity: opacity, y: -(value * 40) }}
             transition={{ duration: 0.5 }}
           >
-            <div>
-              {index > value && (
-                <CheckIcon className="text-white" />
-              )}
-              {index <= value && (
-                <CheckFilled
+            <div className="relative">
+              {loadingState.Icon ? (
+                <loadingState.Icon
                   className={cn(
-                    "text-white",
-                    value === index &&
-                      "text-lime-500 opacity-100"
+                    "w-5 h-5",
+                    value === index ? "text-lime-400" : index < value ? "text-white" : "text-white/60"
                   )}
                 />
+              ) : (
+                <CheckIcon className={cn(value >= index ? "text-white" : "text-white/60")} />
+              )}
+              {index < value && (
+                <CheckFilled className="text-lime-400 w-3.5 h-3.5 absolute -right-2 -top-2" />
+              )}
+              {index === value && (
+                <span className="absolute -right-2 -top-2 w-2 h-2 rounded-full bg-lime-400 animate-ping opacity-70" />
               )}
             </div>
             <span
               className={cn(
-                "text-white",
-                value === index && "text-lime-500 opacity-100"
+                "text-white/85 text-sm tracking-wide",
+                value === index && "text-lime-400 opacity-100"
               )}
             >
               {loadingState.text}
@@ -133,13 +138,12 @@ export const MultiStepLoader = ({
           exit={{
             opacity: 0,
           }}
-          className="w-full h-full fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-2xl"
+          className="w-full h-full fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-xl"
         >
-          <div className="h-96 relative">
+          <div className="h-72 relative">
             <LoaderCore value={currentState} loadingStates={loadingStates} />
           </div>
-
-          <div className="bg-gradient-to-t inset-x-0 z-20 bottom-0 bg-black/50 h-full absolute [mask-image:radial-gradient(900px_at_center,transparent_30%,black)]" />
+          <div className="bg-gradient-to-t from-black/60 to-transparent inset-x-0 z-20 bottom-0 h-full absolute [mask-image:radial-gradient(900px_at_center,transparent_25%,black)]" />
         </motion.div>
       )}
     </AnimatePresence>

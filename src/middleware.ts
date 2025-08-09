@@ -11,7 +11,11 @@ export async function middleware(request: NextRequest) {
   ) {
     return NextResponse.redirect(new URL("/steps/choose", request.url));
   }
-  if (!sessionCookie && pathname.startsWith("/")) {
+  if (
+    !sessionCookie && 
+    pathname.startsWith("/") && 
+    !["/auth", "/auth/signup", "/auth/reset-password", "/auth/verify", "/auth/forgot-password"].includes(pathname)
+  ) {
     return NextResponse.redirect(new URL("/auth", request.url));
   }
   return NextResponse.next();

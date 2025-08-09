@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
 
 // Import components
 import StepIndicator from "./components/StepIndicator";
@@ -15,6 +17,7 @@ import NicheStep from "./components/steps/NicheStep";
 import DomainStep from "./components/steps/DomainStep";
 import PlanStep from "./components/steps/PlanStep";
 import StoreCreationLoader from "@/components/ui/store-creation-loader";
+import { storeService } from "@/lib/axios/store_svc";
 
 // Import step data
 import { 
@@ -40,7 +43,7 @@ const steps = [
   },
   {
     title: "Size",
-    description: "Business size",
+    description: "Business size & team",
     icon: Users,
   },
   {
@@ -65,20 +68,110 @@ const steps = [
   }
 ];
 
-// Fast utility functions - no delays
-const checkAvailability = async (name: string) => {
-  return name.length > 3 && !["taken", "unavailable"].includes(name.toLowerCase());
+
+// Store name validation - no availability checking needed
+const validateStoreName = (name: string) => {
+  // Basic validation: length and format
+  return name.length >= 2 && name.length <= 50 && /^[a-zA-Z0-9\s\-_]+$/.test(name);
 };
 
 const checkDomainAvailability = async (domainName: string) => {
-  return domainName.length > 3 && 
-    !["google", "amazon", "facebook"].includes(domainName.toLowerCase());
+  try {
+    const result = await storeService.checkSubdomainAvailability(domainName);
+    return result.available;
+  } catch (error) {
+    console.error('Error checking domain availability:', error);
+    // Fallback to basic check
+    return domainName.length > 3 && 
+      !["google", "amazon", "facebook", "microsoft"].includes(domainName.toLowerCase());
+  }
 };
 
 export default function StoreSetup() {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreatingStore, setIsCreatingStore] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdStore, setCreatedStore] = useState<any>(null);
+
+  // Check authentication status
+  useEffect(() => {
+    if (!isPending && !session) {
+      console.log('🔐 No session found, redirecting to auth...');
+      router.push('/auth');
+      return;
+    }
+    if (session) {
+      console.log('✅ Session found:', session);
+    }
+  }, [session, isPending, router]);
+
+  // Expose test and debug functions to global scope for easy testing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).testSubdomainAPI = (subdomain: string = 'test-store') => {
+        storeService.testSubdomainEndpoint(subdomain);
+      };
+      
+      (window as any).debugAuth = () => {
+        storeService.debugAuthStatus();
+      };
+      
+      (window as any).setAuthToken = (token: string) => {
+        storeService.setAuthToken(token);
+      };
+      
+      (window as any).setBetterAuthSession = (sessionData: any) => {
+        storeService.setBetterAuthSession(sessionData);
+      };
+      
+      (window as any).setBetterAuthSessionToken = (token: string) => {
+        storeService.setBetterAuthSessionToken(token);
+      };
+      
+      (window as any).extractSessionToken = () => {
+        return storeService.extractSessionToken();
+      };
+      
+      (window as any).testRequestHeaders = () => {
+        storeService.testRequestHeaders();
+      };
+      
+      (window as any).testActualRequest = async () => {
+        await storeService.testActualRequest();
+      };
+
+      (window as any).testAuthMethods = async () => {
+        await storeService.testAuthMethods();
+      };
+
+      // Add session debugging function
+      (window as any).debugSession = () => {
+        console.log('🔍 Current session state:', {
+          session: session,
+          isPending: isPending,
+          sessionExists: !!session,
+          cookies: document.cookie
+        });
+      };
+      
+      (window as any).setTestCookie = () => {
+        storeService.setTestCookie();
+      };
+      
+      console.log('🧪 Test functions available:');
+      console.log('- testSubdomainAPI("your-test-subdomain")');
+      console.log('- debugAuth() - Check authentication status');
+      console.log('- setAuthToken("your-token") - Set auth token manually');
+      console.log('- setBetterAuthSession({sessionToken: "your-token"}) - Set better-auth session');
+      console.log('- setBetterAuthSessionToken("your-token") - Set better-auth session token directly');
+      console.log('- extractSessionToken() - Extract token from better-auth session');
+      console.log('- testRequestHeaders() - Test request headers that would be sent');
+      console.log('- testActualRequest() - Send actual test request to see headers in Network tab');
+      console.log('- setTestCookie() - Set a test cookie to verify cookie functionality');
+    }
+  }, []);
 
   // Store Details Step (Step 1)
   const [storeName, setStoreName] = useState("");
@@ -110,17 +203,17 @@ export default function StoreSetup() {
   // Plan Step (Step 7)
   const [selectedPlan, setSelectedPlan] = useState("");
 
-  // Fast store name availability check
+  // Store name validation check
   useEffect(() => {
     if (storeName) {
-    setIsCheckingAvailability(true);
-    setIsAvailable(null);
+      setIsCheckingAvailability(true);
+      setIsAvailable(null);
 
-      const timeoutId = setTimeout(async () => {
-        const available = await checkAvailability(storeName);
-    setIsAvailable(available);
-    setIsCheckingAvailability(false);
-      }, 200); // Reduced from 500ms
+      const timeoutId = setTimeout(() => {
+        const isValid = validateStoreName(storeName);
+        setIsAvailable(isValid);
+        setIsCheckingAvailability(false);
+      }, 200);
 
       return () => clearTimeout(timeoutId);
     } else {
@@ -166,19 +259,116 @@ export default function StoreSetup() {
     }
   };
 
-  const handleFinish = () => {
-    // Start the store creation animation
+  const handleFinish = async () => {
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     setIsCreatingStore(true);
+
+    try {
+      // Check authentication status before proceeding
+      console.log('🔍 Checking authentication status before store creation...');
+      
+      if (!session) {
+        toast.error('❌ Please log in to create a store.');
+        router.push('/auth');
+        return;
+      }
+
+      console.log('✅ Session verified, proceeding with store creation...');
+      
+      // Prepare form data for submission
+      const formData = {
+        storeName,
+        storeDescription,
+        businessType,
+        businessSize,
+        selectedPlatforms,
+        selectedNiches,
+        selectedPlan,
+        domain,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        currency: 'USD'
+      };
+
+      console.log('🚀 Submitting store creation with data:', formData);
+      
+      // Create the store using the store service
+      const createdStoreResponse = await storeService.createStore(formData);
+      
+      console.log('✅ Store created successfully:', createdStoreResponse);
+      setCreatedStore(createdStoreResponse);
+      
+      // Show success message
+      toast.success(`🎉 ${storeName} has been created successfully!`);
+      
+      // Keep isCreatingStore true to continue with the loading animation
+      // The StoreCreationLoader will call handleStoreCreationComplete when done
+      
+    } catch (error: any) {
+      console.error('❌ Failed to create store:', error);
+      // Enhanced error handling with authentication focus
+      if (error.response?.status === 401) {
+        toast.error('❌ Authentication failed. Please login again and try creating your store.');
+        console.error('🔐 Authentication error details:', error.response.data);
+        
+        // Show helpful debugging info
+        console.log('💡 To debug authentication:');
+        console.log('1. Run debugSession() to check current session state');
+        console.log('2. Run testAuthMethods() to test different auth approaches');
+        console.log('3. Run debugAuth() in console to check current auth status');
+        console.log('4. Run testRequestHeaders() to see exactly what headers would be sent');
+        console.log('5. Check the Network tab in DevTools to see the actual request headers');
+        console.log('6. Verify you are logged in by checking the session:', !!session);
+        console.log('7. Check if better-auth cookies are present:', document.cookie.includes('better-auth.session_token'));
+        
+      } else if (error.response?.status === 409) {
+        toast.error('Store name or domain already exists. Please try different options.');
+      } else if (error.response?.status === 422) {
+        toast.error('Please check all form fields and try again.');
+      } else if (error.response?.status === 403) {
+        toast.error('You do not have permission to create stores. Please contact support.');
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
+      
+      // Stop loading states and STAY on the page for debugging
+      setIsCreatingStore(false);
+      setIsSubmitting(false);
+      
+      // Add additional debugging info for the user
+      console.log('🚨 Store creation failed - staying on page for debugging');
+      console.log('🔍 Available debug functions:');
+      console.log('- debugAuth() - Check authentication status');
+      console.log('- testRequestHeaders() - Test request headers');
+      console.log('- setBetterAuthSessionToken("your-token") - Set session token');
+      console.log('- testActualRequest() - Send test request');
+      
+      // Show a toast to inform user they're staying on the page
+    }
   };
 
   const handleStoreCreationComplete = () => {
-    // Navigate to dashboard after store creation animation completes
-    router.push('/dashboard');
+    console.log('✅ Store creation completed successfully!');
+    console.log('📊 Created store data:', createdStore);
+
+    // Persist the created store briefly for post-redirect use
+    if (createdStore) {
+      try { localStorage.setItem('newStore', JSON.stringify(createdStore)); } catch {}
+    }
+
+    setIsSubmitting(false);
+    setIsCreatingStore(false);
+
+    // Redirect to choose after success
+    router.push('/steps/choose');
   };
 
   const handleStoreCreationCancel = () => {
     // Allow user to cancel the store creation process
     setIsCreatingStore(false);
+    setIsSubmitting(false);
+    setCreatedStore(null);
   };
 
   const renderStepContent = () => {
@@ -237,6 +427,8 @@ export default function StoreSetup() {
             setIsGenerating={setIsGenerating}
             showAiHelper={showAiHelper}
             setShowAiHelper={setShowAiHelper}
+            storeName={storeName}
+            selectedNiches={selectedNiches}
           />
         );
       case 7:
@@ -271,6 +463,18 @@ export default function StoreSetup() {
         return false;
     }
   };
+
+  // Show loading while checking session
+  if (isPending) {
+    return (
+      <div className="min-h-screen bg-black text-white relative overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/60">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -310,7 +514,7 @@ export default function StoreSetup() {
               currentStep={currentStep}
               totalSteps={steps.length}
               isNextDisabled={isNextDisabled()}
-              isLoading={false}
+              isLoading={isSubmitting}
               onNext={handleNext}
               onBack={handleBack}
               isTransitioning={false}
@@ -327,6 +531,14 @@ export default function StoreSetup() {
       onComplete={handleStoreCreationComplete}
       onCancel={handleStoreCreationCancel}
       storeName={storeName || "your store"}
+      storeData={{
+        businessType,
+        businessSize,
+        selectedPlatforms,
+        selectedNiches,
+        domain,
+        createdStore
+      }}
     />
     </>
   );

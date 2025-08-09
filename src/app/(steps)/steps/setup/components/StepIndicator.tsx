@@ -37,7 +37,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
   return (
     <TooltipProvider delayDuration={200}>
       <div className="relative mb-4">
-        <div className="bg-black/40 backdrop-blur-xl rounded-xl border border-white/10 shadow-lg p-4">
+        <div className="bg-black/40 backdrop-blur-xl rounded-xl border border-white/10 shadow-lg p-4 overflow-hidden">
           {/* Step counter */}
           <div className="absolute top-2 right-3">
             <span className="text-xs text-white/40 font-normal">
@@ -47,18 +47,16 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
 
           {/* Progress Bar */}
           <div className="relative mb-5">
-            <div className="absolute top-4 left-0 w-full px-4">
-              {/* Background track */}
-              <div className="h-px w-full bg-white/10 rounded-full" />
-              {/* Progress fill */}
-              <div 
-                className="absolute top-0 left-0 h-px bg-gradient-to-r from-white to-white/80 rounded-full transition-all duration-600 ease-out"
-                style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+            {/* Compact Steps with track behind icons */}
+            <div className="relative flex items-center justify-between px-6">
+              {/* Track behind icons (pure white, thin) */}
+              <div className="absolute left-6 right-6 h-px bg-white/25 rounded-full pointer-events-none" aria-hidden />
+              {/* Progress fill behind icons (pure white with glow) */}
+              <div
+                className="absolute left-6 h-px bg-white rounded-full transition-all duration-500 ease-out shadow-[0_0_14px_rgba(255,255,255,0.45)]"
+                style={{ width: `calc(${((currentStep - 1) / (steps.length - 1)) * 100}% * (100% - 3rem) / 100)` }}
+                aria-hidden
               />
-            </div>
-
-            {/* Compact Steps */}
-            <div className="relative flex justify-between px-4">
               {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isActive = stepNumber === currentStep;
@@ -68,23 +66,25 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                 return (
                   <Tooltip key={index}>
                     <TooltipTrigger asChild>
-                      <div
-                        className={`flex flex-col items-center group transition-all duration-200 ${
+                       <div
+                         className={`relative flex flex-col items-center group transition-all duration-200 ${
                           isClickable ? 'cursor-pointer hover:scale-105' : 'cursor-default'
                         }`}
                         onClick={() => handleStepClick(index)}
                       >
-                        {/* Compact Step circle */}
+                         {/* Line eraser under each icon to create a gap in the track */}
+                         <div className="pointer-events-none absolute top-1/2 -translate-y-1/2 w-14 h-3 bg-black/40 rounded-full z-[5]" aria-hidden />
+                        {/* Step node */}
                         <div
-                          className={`relative flex items-center justify-center w-8 h-8 rounded-lg border transition-all duration-200 ${
+                          className={`relative z-10 flex items-center justify-center w-11 h-11 rounded-full border transition-all duration-200 shadow-sm ${
                             isActive
-                              ? "bg-white/20 border-white/50"
+                              ? "bg-white/20 border-white/50 ring-2 ring-white/30"
                               : isCompleted
                               ? "bg-white/30 border-white/60"
                               : "bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                           }`}
                         >
-                          <step.icon className={`w-4 h-4 transition-colors duration-300 ${
+                          <step.icon className={`w-5 h-5 transition-colors duration-300 ${
                             isActive
                               ? "text-white"
                               : isCompleted
@@ -94,15 +94,15 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                           
                           {/* Completion indicator */}
                           {isCompleted && (
-                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-white rounded-full flex items-center justify-center">
-                              <CheckCircle2 className="w-2 h-2 text-black" />
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow ring-1 ring-black/10">
+                              <CheckCircle2 className="w-3 h-3 text-black" />
                             </div>
                           )}
                         </div>
 
                         {/* Compact labels */}
-                        <div className="mt-2 text-center">
-                          <div className={`text-xs font-medium transition-colors duration-300 ${
+                        <div className="mt-2 text-center min-w-[80px]">
+                          <div className={`text-[12px] font-medium transition-colors duration-300 ${
                             isActive 
                               ? "text-white" 
                               : isCompleted 
@@ -111,7 +111,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                           }`}>
                             {step.title}
                           </div>
-                          <div className="text-[10px] text-white/40 mt-0.5 max-w-[60px] mx-auto leading-tight">
+                          <div className="text-[10px] text-white/40 mt-0.5 max-w-[90px] mx-auto leading-tight">
                             {step.description}
                           </div>
                         </div>

@@ -2,7 +2,7 @@
 
 import React from "react";
 import OptionCard from "../OptionCard";
-import { Users, TrendingUp, Building } from "lucide-react";
+import { Users, TrendingUp, Building, ShieldCheck, Sparkles } from "lucide-react";
 
 export interface BusinessSizeStepProps {
   businessSize: string;
@@ -16,6 +16,8 @@ const businessSizes = [
     description: "Solo entrepreneur or freelancer",
     icon: Users,
     metrics: "1 person",
+    chips: ["Lightweight", "Quick setup", "Low cost"],
+    theme: "emerald",
   },
   {
     id: "small",
@@ -23,6 +25,8 @@ const businessSizes = [
     description: "2-10 employees",
     icon: TrendingUp,
     metrics: "2-10 people",
+    chips: ["Collaboration", "Multi-user", "Automation"],
+    theme: "cyan",
   },
   {
     id: "medium",
@@ -30,6 +34,8 @@ const businessSizes = [
     description: "11-50 employees",
     icon: Building,
     metrics: "11-50 people",
+    chips: ["Workflows", "Inventory", "Analytics"],
+    theme: "purple",
   },
   {
     id: "large",
@@ -37,8 +43,12 @@ const businessSizes = [
     description: "50+ employees",
     icon: Building,
     metrics: "50+ people",
+    chips: ["SSO", "Permissions", "APIs"],
+    theme: "indigo",
   }
-];
+] as const;
+
+type SizeId = typeof businessSizes[number]["id"];
 
 const BusinessSizeStep: React.FC<BusinessSizeStepProps> = ({
   businessSize,
@@ -50,6 +60,10 @@ const BusinessSizeStep: React.FC<BusinessSizeStepProps> = ({
     <div className="space-y-6">
       {/* Step Header */}
       <div className="text-center space-y-2">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80">
+          <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+          Team details
+        </div>
         <h1 className="text-xl font-semibold text-white">
           What's the size of your business?
         </h1>
@@ -60,13 +74,6 @@ const BusinessSizeStep: React.FC<BusinessSizeStepProps> = ({
 
       {/* Business Size Selection */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 bg-white/20 rounded-lg">
-            <Users className="w-4 h-4 text-white" />
-          </div>
-          <h3 className="text-lg font-medium text-white">Team Size</h3>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {businessSizes.map((size) => (
             <OptionCard
@@ -77,11 +84,20 @@ const BusinessSizeStep: React.FC<BusinessSizeStepProps> = ({
               icon={size.icon}
               isSelected={businessSize === size.id}
               onClick={setBusinessSize}
-              gradientTheme="green"
+              gradientTheme={size.theme as any}
               variant="radio"
+              size="lg"
+              className="min-h-[120px]"
             >
-              <div className="mt-2 px-2 py-1 bg-white/10 rounded text-xs text-zinc-300">
-                {size.metrics}
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <span className="px-2 py-0.5 bg-white/10 rounded text-xs text-zinc-300 border border-white/20">
+                  {size.metrics}
+                </span>
+                {size.chips.map((chip) => (
+                  <span key={chip} className="px-2 py-0.5 bg-white/10 rounded text-[10px] text-white/80 border border-white/20">
+                    {chip}
+                  </span>
+                ))}
               </div>
             </OptionCard>
           ))}
@@ -95,7 +111,13 @@ const BusinessSizeStep: React.FC<BusinessSizeStepProps> = ({
                 <selectedSize.icon className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1">
-                <h4 className="font-medium text-white text-sm">{selectedSize.title}</h4>
+                <h4 className="font-medium text-white text-sm flex items-center gap-2">
+                  {selectedSize.title}
+                  <span className="inline-flex items-center gap-1 text-emerald-300 text-[11px]">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Tailored recommendations enabled
+                  </span>
+                </h4>
                 <p className="text-xs text-zinc-400">{selectedSize.description}</p>
               </div>
               <div className="text-xs text-white font-medium">

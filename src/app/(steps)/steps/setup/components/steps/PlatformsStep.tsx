@@ -7,7 +7,9 @@ import {
   Store, 
   Smartphone,
   Facebook,
-  Instagram
+  Instagram,
+  Sparkles,
+  Globe
 } from "lucide-react";
 
 export interface PlatformsStepProps {
@@ -21,56 +23,67 @@ const platforms = [
     title: "I don't sell anywhere yet",
     description: "Starting fresh with Axova",
     icon: ShoppingBag,
+    theme: "emerald",
   },
   {
     id: "shopify",
     title: "Shopify",
     description: "E-commerce platform",
     icon: Store,
+    theme: "cyan",
   },
   {
     id: "woocommerce",
     title: "WooCommerce",
     description: "WordPress e-commerce",
     icon: Store,
+    theme: "cyan",
   },
   {
     id: "etsy",
     title: "Etsy",
     description: "Handmade & vintage marketplace",
     icon: ShoppingBag,
+    theme: "purple",
   },
   {
     id: "amazon",
     title: "Amazon",
     description: "Global marketplace",
     icon: ShoppingBag,
+    theme: "purple",
   },
   {
     id: "facebook",
     title: "Facebook Shop",
     description: "Social commerce",
     icon: Facebook,
+    theme: "blue",
   },
   {
     id: "instagram",
     title: "Instagram Shop",
     description: "Visual commerce",
     icon: Instagram,
+    theme: "blue",
   },
   {
     id: "mobile",
     title: "Mobile App",
     description: "Custom mobile application",
     icon: Smartphone,
+    theme: "amber",
   },
   {
     id: "other",
     title: "Other",
     description: "Different platform",
     icon: Store,
+    theme: "indigo",
   }
-];
+] as const;
+
+type PlatformId = typeof platforms[number]["id"];
 
 const PlatformsStep: React.FC<PlatformsStepProps> = ({
   selectedPlatforms,
@@ -78,10 +91,8 @@ const PlatformsStep: React.FC<PlatformsStepProps> = ({
 }) => {
   const togglePlatform = (platformId: string) => {
     if (platformId === "none") {
-      // If "none" is selected, clear all others
       setSelectedPlatforms(["none"]);
     } else {
-      // If any other platform is selected, remove "none" and toggle the platform
       const newSelection = selectedPlatforms.filter(id => id !== "none");
       if (selectedPlatforms.includes(platformId)) {
         const filtered = newSelection.filter(id => id !== platformId);
@@ -92,10 +103,16 @@ const PlatformsStep: React.FC<PlatformsStepProps> = ({
     }
   };
 
+  const count = selectedPlatforms.includes("none") ? 0 : selectedPlatforms.length;
+
   return (
     <div className="space-y-6">
       {/* Step Header */}
       <div className="text-center space-y-2">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80">
+          <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+          Sales channels
+        </div>
         <h1 className="text-xl font-semibold text-white">
           Where do you currently sell?
         </h1>
@@ -123,24 +140,33 @@ const PlatformsStep: React.FC<PlatformsStepProps> = ({
               icon={platform.icon}
               isSelected={selectedPlatforms.includes(platform.id)}
               onClick={togglePlatform}
-              gradientTheme="green"
+              gradientTheme={platform.theme as any}
               variant="multiselect"
               size="sm"
-            />
+            >
+              {platform.id !== 'none' && (
+                <div className="mt-2 text-[10px] text-white/80 flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 rounded bg-white/10 border border-white/20">Channel</span>
+                  <span className="px-1.5 py-0.5 rounded bg-white/10 border border-white/20">Sync</span>
+                </div>
+              )}
+            </OptionCard>
           ))}
         </div>
 
         {/* Selection Summary */}
-        {selectedPlatforms.length > 0 && (
-          <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4 border border-white/10">
-            <div className="flex items-center gap-2 mb-2">
-              <Store className="w-4 h-4 text-white" />
-              <span className="text-sm font-medium text-white">
-                Selected Platforms ({selectedPlatforms.length})
-              </span>
-            </div>
+        <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+          <div className="flex items-center gap-2 mb-2">
+            <Globe className="w-4 h-4 text-white" />
+            <span className="text-sm font-medium text-white">
+              Selected Platforms ({count})
+            </span>
+          </div>
+          {count === 0 ? (
+            <p className="text-xs text-zinc-400">No platforms selected. You can start anywhere.</p>
+          ) : (
             <div className="flex flex-wrap gap-2">
-              {selectedPlatforms.map((platformId) => {
+              {selectedPlatforms.filter(p => p !== 'none').map((platformId) => {
                 const platform = platforms.find(p => p.id === platformId);
                 return (
                   <span
@@ -152,8 +178,8 @@ const PlatformsStep: React.FC<PlatformsStepProps> = ({
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -181,7 +181,7 @@ const FormField: React.FC<FormFieldProps> = ({
 
         {/* Character count */}
         {showCharCount && maxLength && (
-          <div className="absolute top-full right-0 mt-1">
+          <div className="absolute -bottom-5 right-0 mt-1 pointer-events-none">
             <span className={`text-xs ${
               value.length > maxLength * 0.8 ? 'text-amber-400' : 'text-zinc-500'
             }`}>
