@@ -358,6 +358,57 @@ const generateOrgSlug = (orgName: string): string => {
 
 // Advanced store service with comprehensive functionality
 export const storeService = {
+    // Utility: get selected store id from localStorage
+    getSelectedStoreId(): string | null {
+        try {
+            if (typeof window === 'undefined') return null;
+            const raw = localStorage.getItem('selectedStore');
+            if (!raw) return null;
+            // Try JSON first
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object' && typeof parsed.id === 'string') {
+                    return parsed.id;
+                }
+            } catch (_) {
+                // Fallback: attempt to extract id via regex from non-JSON formats
+                const match = raw.match(/id"?\s*[:=]\s*"([a-zA-Z0-9_\-]+)"/);
+                if (match && match[1]) return match[1];
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    },
+
+    // Internal: resolve final store id from arg or localStorage
+    resolveStoreId(maybeStoreId?: string): string {
+        const fromArg = (maybeStoreId || '').trim();
+        const fromStorage = this.getSelectedStoreId();
+        const finalId = fromArg || fromStorage || '';
+        if (!finalId) {
+            throw new Error('No store id available. Ensure a store is selected in localStorage as { id: "..." } under key "selectedStore".');
+        }
+        return finalId;
+    },
+
+    // Convenience: GET current store using selected store id
+    async getCurrentStore(maybeStoreId?: string) {
+        const id = this.resolveStoreId(maybeStoreId);
+        return axiosInstance.get(`/stores/${id}`);
+    },
+
+    // Convenience: PATCH current store using selected store id
+    async updateCurrentStore(updates: Partial<StoreCreationRequest> | Record<string, any>, maybeStoreId?: string) {
+        const id = this.resolveStoreId(maybeStoreId);
+        return axiosInstance.patch(`/stores/${id}`, updates);
+    },
+
+    // Convenience: PATCH publish current store using selected store id
+    async publishCurrentStore(maybeStoreId?: string) {
+        const id = this.resolveStoreId(maybeStoreId);
+        return axiosInstance.patch(`/stores/${id}/publish`, { isPublished: true });
+    },
     // Create a new store
     async createStore(formData: {
         storeName: string;

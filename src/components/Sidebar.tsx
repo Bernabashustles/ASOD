@@ -177,7 +177,7 @@ const navigation: NavSection[] = [
           { icon: <PlusCircle className="w-4 h-4" />, label: 'Campaigns', href: '/marketing/campaigns' },
           
         ]
-      },
+      },  
       { 
         icon: <Percent className="w-4 h-4" />, 
         label: 'Discounts',
